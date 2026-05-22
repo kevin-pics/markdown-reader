@@ -1,7 +1,6 @@
 (function () {
   'use strict';
 
-  const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
   let inlineCurrentUrl = null;
 
   const hideStyle = document.createElement('style');
@@ -83,32 +82,6 @@
   }
 
   // ===== Storage Helpers =====
-  async function storageGet(key) {
-    return new Promise((resolve) => {
-      chrome.storage.local.get(key, (res) => resolve(res[key]));
-    });
-  }
-
-  async function storageSet(obj) {
-    return new Promise((resolve) => {
-      chrome.storage.local.set(obj, resolve);
-    });
-  }
-
-  async function getDirCache(dirUrl) {
-    const cache = await storageGet('dirCache');
-    if (!cache || !cache[dirUrl]) return null;
-    const entry = cache[dirUrl];
-    if (Date.now() - entry.ts > CACHE_TTL) return null;
-    return entry.files;
-  }
-
-  async function setDirCache(dirUrl, files) {
-    const cache = (await storageGet('dirCache')) || {};
-    cache[dirUrl] = { files, ts: Date.now() };
-    await storageSet({ dirCache: cache });
-  }
-
   // ===== UI Builders =====
   function buildSkeleton() {
     const container = document.createElement('div');
@@ -349,32 +322,8 @@
   }
 
   async function loadFileList(currentUrl, dirUrl, fileList, contentEl) {
-    let allFiles = [];
-
-    // Layer 1: cache
-    const cache = await getDirCache(dirUrl);
-    if (cache) {
-      allFiles = [...cache];
-    }
-
-    // Layer 2: content links
     const linked = parseContentLinks(contentEl, currentUrl, dirUrl);
-    linked.forEach(l => {
-      if (!allFiles.some(f => f.url === l.url)) allFiles.push(l);
-    });
-
-    // Layer 3: files opened before
-    try {
-      const res = await new Promise(r => chrome.runtime.sendMessage({ type: 'getDirFiles', dirUrl }, r));
-      const stored = ((res && res.files) || []).map(f => ({ url: f.url, title: f.title }));
-      stored.forEach(f => {
-        if (!allFiles.some(existing => existing.url === f.url)) allFiles.push(f);
-      });
-    } catch {
-      // Storage fallback is best-effort.
-    }
-
-    renderFileList(currentUrl, dedupeFiles(allFiles), fileList, contentEl);
+    renderFileList(currentUrl, dedupeFiles(linked), fileList, contentEl);
   }
 
   async function scanPickedDirectory(currentUrl, dirUrl) {
@@ -397,10 +346,6 @@
     }
 
     const unique = dedupeFiles(files);
-    if (unique.length === 0) {
-      throw new Error('No Markdown files found in the selected folder.');
-    }
-
     return unique;
   }
 
@@ -411,14 +356,8 @@
 
       try {
         const picked = await scanPickedDirectory(currentUrl, dirUrl);
-        const linked = parseContentLinks(contentEl, currentUrl, dirUrl);
-        const merged = dedupeFiles([...picked, ...linked]);
-        await setDirCache(dirUrl, merged);
-        renderFileList(currentUrl, merged, fileList, contentEl);
-
-        chrome.runtime.sendMessage({ type: 'storeDirFiles', dirUrl, files: merged }, () => {
-          if (chrome.runtime.lastError) console.error(chrome.runtime.lastError);
-        });
+        inlineCurrentUrl = null;
+        renderFileList(currentUrl, picked, fileList, contentEl);
       } catch (err) {
         if (err && err.name === 'AbortError') {
           await loadFileList(currentUrl, dirUrl, fileList, contentEl);
@@ -465,11 +404,6 @@
 
     // File list uses passive sources until the user grants folder access.
     await loadFileList(url, dirUrl, ui.fileList, ui.content);
-
-    // Record visit
-    chrome.runtime.sendMessage({ type: 'recordFile', url, title: docTitle }, (res) => {
-      if (chrome.runtime.lastError) console.error(chrome.runtime.lastError);
-    });
 
     // Scroll spy
     setupScrollSpy(ui.main, headings, tocItems);
