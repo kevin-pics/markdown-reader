@@ -329,9 +329,64 @@
     return unique;
   }
 
+  function fetchDirListing(dirUrl) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ type: 'fetchUrl', url: dirUrl }, (response) => {
+        if (chrome.runtime.lastError || !response || !response.ok) {
+          console.warn('[MDR] Directory listing failed:', chrome.runtime.lastError?.message || response?.error || 'no response');
+          resolve([]);
+          return;
+        }
+        console.log('[MDR] Received HTML length:', response.html.length);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(response.html, 'text/html');
+        // Log addRow calls found in the raw HTML for debugging
+        const addRowMatches = response.html.match(/addRow\([^)]+\)/g);
+        console.log('[MDR] addRow calls found:', addRowMatches ? addRowMatches.length : 0, addRowMatches ? addRowMatches.slice(0, 3) : []);
+        const files = parseDirListingDoc(doc, dirUrl);
+        console.log('[MDR] Directory listing found', files.length, 'files');
+        resolve(files);
+      });
+    });
+  }
+
+  function parseDirListingDoc(doc, dirUrl) {
+    // Chrome directory listings use JS addRow() to build the page dynamically.
+    // DOMParser won't execute JS, so we must parse the script source instead.
+    const scripts = doc.querySelectorAll('script');
+    const files = [];
+    scripts.forEach(script => {
+      const regex = /addRow\(\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*(\d+)\s*,/g;
+      let match;
+      while ((match = regex.exec(script.textContent)) !== null) {
+        const name = match[1].replace(/\\(.)/g, '$1');
+        const urlPath = match[2].replace(/\\(.)/g, '$1');
+        const isdir = parseInt(match[3], 10);
+        if (isdir !== 0) return; // skip directories
+        if (!isMarkdownFileName(name)) return;
+        try {
+          const fileUrl = new URL(urlPath, dirUrl).href;
+          // Only include files in the same directory
+          const fileDir = getDirUrl(fileUrl);
+          if (fileDir !== dirUrl) return;
+          files.push({ url: fileUrl, title: name });
+        } catch {
+          // Fallback: construct URL directly
+          files.push({ url: dirUrl + encodeURIComponent(name), title: name });
+        }
+      }
+    });
+    return dedupeFiles(files);
+  }
+
   async function loadFileList(currentUrl, dirUrl, fileList, contentEl) {
+    // Try directory listing first
+    const dirFiles = await fetchDirListing(dirUrl);
+    // Also parse links in the current document
     const linked = parseContentLinks(contentEl, currentUrl, dirUrl);
-    renderFileList(currentUrl, dedupeFiles(linked), fileList, contentEl);
+    // Merge and dedupe
+    const allFiles = dedupeFiles([...dirFiles, ...linked]);
+    renderFileList(currentUrl, allFiles, fileList, contentEl);
   }
 
   async function scanPickedDirectory(currentUrl, dirUrl) {
