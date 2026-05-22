@@ -161,10 +161,42 @@
     sidebar.appendChild(tabs);
     sidebar.appendChild(sidebarContent);
 
+    const toolbar = document.createElement('div');
+    toolbar.id = 'mdr-toolbar';
+    toolbar.innerHTML = `
+      <label for="mdr-font-select">Font:</label>
+      <select id="mdr-font-select">
+        <optgroup label="Sans-serif">
+          <option value="system" selected>System Default</option>
+          <option value="sfpro">SF Pro</option>
+          <option value="helvetica">Helvetica Neue</option>
+          <option value="avenir">Avenir</option>
+          <option value="verdana">Verdana</option>
+          <option value="pingfang">PingFang SC (苹方)</option>
+        </optgroup>
+        <optgroup label="Serif">
+          <option value="times">Times New Roman</option>
+          <option value="georgia">Georgia</option>
+          <option value="palatino">Palatino</option>
+          <option value="charter">Charter</option>
+          <option value="hoefler">Hoefler Text</option>
+          <option value="newyork">New York</option>
+          <option value="songti">Songti SC (宋体)</option>
+        </optgroup>
+        <optgroup label="Monospace">
+          <option value="sfmono">SF Mono</option>
+          <option value="menlo">Menlo</option>
+          <option value="monaco">Monaco</option>
+          <option value="andale">Andale Mono</option>
+        </optgroup>
+      </select>
+    `;
+
     const main = document.createElement('main');
     main.id = 'mdr-main';
     const content = document.createElement('article');
     content.id = 'mdr-content';
+    main.appendChild(toolbar);
     main.appendChild(content);
 
     container.appendChild(sidebar);
@@ -182,7 +214,8 @@
       content,
       tabFiles: tabs.querySelector('#mdr-tab-files'),
       tabToc: tabs.querySelector('#mdr-tab-toc'),
-      pickDirButton: fileActions.querySelector('#mdr-pick-dir')
+      pickDirButton: fileActions.querySelector('#mdr-pick-dir'),
+      fontSelect: toolbar.querySelector('#mdr-font-select')
     };
   }
 
@@ -406,6 +439,40 @@
     });
   }
 
+  function setupFontSelector(select, container) {
+    const FONT_MAP = {
+      system: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      sfpro: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif',
+      helvetica: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+      avenir: '"Avenir Next", "Avenir", -apple-system, sans-serif',
+      verdana: 'Verdana, Geneva, "Helvetica Neue", sans-serif',
+      pingfang: '"PingFang SC", "Noto Sans SC", "Helvetica Neue", sans-serif',
+      times: '"Times New Roman", Times, Georgia, serif',
+      georgia: 'Georgia, "Songti SC", serif',
+      palatino: 'Palatino, "Palatino Linotype", Georgia, serif',
+      charter: '"Charter", "Bitstream Charter", Georgia, serif',
+      hoefler: '"Hoefler Text", "Baskerville", Georgia, serif',
+      newyork: '"New York", "Georgia", ui-serif, serif',
+      songti: '"Songti SC", "STSong", "SimSun", Georgia, serif',
+      sfmono: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
+      menlo: 'Menlo, Monaco, "Courier New", monospace',
+      monaco: 'Monaco, "Courier New", monospace',
+      andale: '"Andale Mono", "Courier New", monospace'
+    };
+
+    const saved = localStorage.getItem('mdr-font');
+    if (saved && FONT_MAP[saved]) {
+      select.value = saved;
+      container.style.setProperty('--mdr-font', FONT_MAP[saved]);
+    }
+
+    select.addEventListener('change', () => {
+      const key = select.value;
+      container.style.setProperty('--mdr-font', FONT_MAP[key] || FONT_MAP.system);
+      localStorage.setItem('mdr-font', key);
+    });
+  }
+
   // ===== Main =====
   async function init() {
     const url = getCleanFileUrl(location.href);
@@ -433,6 +500,7 @@
     // Tabs
     setupTabs(ui.tabFiles, ui.tabToc, ui.fileListPanel, ui.tocPanel);
     setupDirectoryPicker(ui.pickDirButton, url, dirUrl, ui.fileList, ui.content);
+    setupFontSelector(ui.fontSelect, ui.container);
 
     // File list uses passive sources until the user grants folder access.
     await loadFileList(url, dirUrl, ui.fileList, ui.content);

@@ -12,6 +12,7 @@ html, body {
   display: flex;
   width: 100vw;
   height: 100vh;
+  --mdr-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 /* ===== Sidebar ===== */
@@ -217,12 +218,52 @@ html, body {
   background: #ffffff;
 }
 
+/* ===== Toolbar ===== */
+#mdr-toolbar {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 12px 48px 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  font-size: 13px;
+  color: #6b7280;
+  user-select: none;
+}
+
+#mdr-toolbar label {
+  font-weight: 500;
+  cursor: pointer;
+}
+
+#mdr-toolbar select {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+
+#mdr-toolbar select:hover {
+  border-color: #9ca3af;
+}
+
+#mdr-toolbar select:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+}
+
 #mdr-content {
   max-width: 900px;
   margin: 0 auto;
-  padding: 40px 48px 80px;
-  font-size: 16px;
+  padding: 16px 48px 80px;
+  font-size: 18px;
   line-height: 1.7;
+  font-family: var(--mdr-font);
 }
 
 /* ===== Markdown Styles ===== */
