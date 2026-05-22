@@ -16,6 +16,31 @@ A Chrome extension that renders local Markdown files with a sidebar file explore
 
 ---
 
+## 安装 / Installation
+
+1. 克隆或下载本仓库 / Clone or download this repository
+2. 在 Chrome 中打开 `chrome://extensions/` / Open `chrome://extensions/` in Chrome
+3. 开启右上角 **开发者模式** / Enable **Developer mode** (top right)
+4. 点击 **加载已解压的扩展程序**，选择项目文件夹 / Click **Load unpacked** and select the project folder
+5. 点击扩展的 **详情**，开启 **「允许访问文件网址」** / Click **Details** on the extension, then enable **"Allow access to file URLs"**
+
+---
+
+## 使用 / Usage
+
+在 Chrome 中打开本地 Markdown 文件（如将 `.md` 文件拖入浏览器），扩展会自动：
+
+Open any local Markdown file in Chrome (e.g. drag a `.md` file into the browser). The extension will automatically:
+
+- 将 Markdown 渲染为格式化 HTML / Render the Markdown as formatted HTML
+- 在侧栏显示同目录下的 `.md` 文件 / Populate the sidebar with sibling `.md` files
+- 从标题生成目录导航 / Generate a table of contents from headings
+- 高亮当前文件 / Highlight the current file in the file list
+
+点击侧栏中的文件名即可跳转 / Click any file in the sidebar to navigate to it.
+
+---
+
 ## 实现原理 / How It Works
 
 ### 目录文件列表 / Directory File Listing
@@ -45,31 +70,6 @@ A Chrome extension that renders local Markdown files with a sidebar file explore
 扩展还会扫描渲染后的 Markdown 中指向同目录其他 `.md` 文件的 `[链接](other.md)`，与目录列表合并去重。
 
 The extension also scans rendered Markdown for `[links](other.md)` pointing to other Markdown files in the same directory, merging them with the directory listing (deduped).
-
----
-
-## 安装 / Installation
-
-1. 克隆或下载本仓库 / Clone or download this repository
-2. 在 Chrome 中打开 `chrome://extensions/` / Open `chrome://extensions/` in Chrome
-3. 开启右上角 **开发者模式** / Enable **Developer mode** (top right)
-4. 点击 **加载已解压的扩展程序**，选择项目文件夹 / Click **Load unpacked** and select the project folder
-5. 点击扩展的 **详情**，开启 **「允许访问文件网址」** / Click **Details** on the extension, then enable **"Allow access to file URLs"**
-
----
-
-## 使用 / Usage
-
-在 Chrome 中打开本地 Markdown 文件（如将 `.md` 文件拖入浏览器），扩展会自动：
-
-Open any local Markdown file in Chrome (e.g. drag a `.md` file into the browser). The extension will automatically:
-
-- 将 Markdown 渲染为格式化 HTML / Render the Markdown as formatted HTML
-- 在侧栏显示同目录下的 `.md` 文件 / Populate the sidebar with sibling `.md` files
-- 从标题生成目录导航 / Generate a table of contents from headings
-- 高亮当前文件 / Highlight the current file in the file list
-
-点击侧栏中的文件名即可跳转 / Click any file in the sidebar to navigate to it.
 
 ---
 
