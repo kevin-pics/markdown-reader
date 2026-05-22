@@ -281,7 +281,7 @@ html, body {
   background: var(--mdr-file-icon-active);
 }
 
-#mdr-file-empty {
+#mdr-file-list li#mdr-file-empty {
   padding: 20px 16px;
   font-size: 13px;
   color: var(--mdr-text-muted);
@@ -289,9 +289,10 @@ html, body {
   cursor: default;
   word-break: normal;
   overflow-wrap: break-word;
+  display: block;
 }
 
-#mdr-file-empty::before {
+#mdr-file-list li#mdr-file-empty::before {
   display: none;
 }
 
