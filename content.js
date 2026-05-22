@@ -357,7 +357,6 @@
     }
 
     const handle = await window.showDirectoryPicker({
-      mode: 'read',
       startIn: 'desktop'
     });
     const files = [];
