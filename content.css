@@ -126,14 +126,7 @@ html, body {
 
 /* ===== Sidebar ===== */
 #mdr-sidebar {
-  width: 280px;
-  min-width: 280px;
-  background: var(--mdr-bg-sidebar);
-  border-right: 1px solid var(--mdr-border);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+  display: none;
 }
 
 #mdr-tabs {
