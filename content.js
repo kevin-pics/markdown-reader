@@ -366,6 +366,10 @@
         const picked = await scanPickedDirectory(currentUrl, dirUrl);
         inlineCurrentUrl = null;
         renderFileList(currentUrl, picked, fileList, contentEl);
+
+        // Auto-select the first file
+        const firstLi = fileList.querySelector('li:not(#mdr-file-empty)');
+        if (firstLi) firstLi.click();
       } catch (err) {
         if (err && err.name === 'AbortError') {
           await loadFileList(currentUrl, dirUrl, fileList, contentEl);
