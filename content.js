@@ -2,6 +2,7 @@
   'use strict';
 
   const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+  let inlineCurrentUrl = null;
 
   const hideStyle = document.createElement('style');
   hideStyle.textContent = 'html,body{display:none!important}';
@@ -239,7 +240,7 @@
     tabToc.addEventListener('click', () => switchTab('toc'));
   }
 
-  function renderFileList(currentUrl, files, fileList) {
+  function renderFileList(currentUrl, files, fileList, contentEl) {
     fileList.innerHTML = '';
     if (files.length === 0) {
       fileList.innerHTML = '<li id="mdr-file-empty">No Markdown files found yet. Choose the current folder to list its Markdown files.</li>';
@@ -254,14 +255,39 @@
 
     sorted.forEach((f) => {
       const li = document.createElement('li');
-      if (isSameFileUrl(f.url, currentUrl)) li.classList.add('active');
+      if (isSameFileUrl(f.url, currentUrl) || (inlineCurrentUrl && isSameFileUrl(f.url, inlineCurrentUrl))) {
+        li.classList.add('active');
+      }
 
       const titleSpan = document.createElement('span');
       titleSpan.textContent = f.title || getFileName(f.url);
       titleSpan.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;';
       li.appendChild(titleSpan);
 
-      li.addEventListener('click', () => { window.location.href = f.url; });
+      li.addEventListener('click', async () => {
+        if (f.handle && contentEl) {
+          try {
+            const file = await f.handle.getFile();
+            const text = await file.text();
+            const headings = renderMarkdown(contentEl, text);
+            document.title = f.title;
+            inlineCurrentUrl = f.url;
+            fileList.querySelectorAll('li').forEach(el => el.classList.remove('active'));
+            li.classList.add('active');
+            const tocList = document.getElementById('mdr-toc');
+            const main = document.getElementById('mdr-main');
+            if (tocList && main) {
+              const tocItems = renderToc(tocList, headings);
+              setupScrollSpy(main, headings, tocItems);
+            }
+          } catch (e) {
+            console.error('Failed to read file inline:', e);
+            window.location.href = f.url;
+          }
+        } else {
+          window.location.href = f.url;
+        }
+      });
       fileList.appendChild(li);
     });
   }
@@ -348,7 +374,7 @@
       // Storage fallback is best-effort.
     }
 
-    renderFileList(currentUrl, dedupeFiles(allFiles), fileList);
+    renderFileList(currentUrl, dedupeFiles(allFiles), fileList, contentEl);
   }
 
   async function scanPickedDirectory(currentUrl, dirUrl) {
@@ -365,13 +391,14 @@
       if (entry.kind !== 'file' || !isMarkdownFileName(name)) continue;
       files.push({
         url: fileUrlFromName(dirUrl, name),
-        title: name
+        title: name,
+        handle: entry
       });
     }
 
     const unique = dedupeFiles(files);
-    if (!unique.some(f => isSameFileUrl(f.url, currentUrl))) {
-      throw new Error('The selected folder does not appear to contain this Markdown file.');
+    if (unique.length === 0) {
+      throw new Error('No Markdown files found in the selected folder.');
     }
 
     return unique;
@@ -387,7 +414,7 @@
         const linked = parseContentLinks(contentEl, currentUrl, dirUrl);
         const merged = dedupeFiles([...picked, ...linked]);
         await setDirCache(dirUrl, merged);
-        renderFileList(currentUrl, merged, fileList);
+        renderFileList(currentUrl, merged, fileList, contentEl);
 
         chrome.runtime.sendMessage({ type: 'storeDirFiles', dirUrl, files: merged }, () => {
           if (chrome.runtime.lastError) console.error(chrome.runtime.lastError);
