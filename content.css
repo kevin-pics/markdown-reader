@@ -263,7 +263,7 @@ html, body {
   font-family: var(--mdr-font);
   font-size: 13px;
   cursor: pointer;
-  color: var(--mdr-btn-text);
+  color: var(--mdr-text-secondary);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -328,7 +328,7 @@ html, body {
   font-family: var(--mdr-font);
   font-size: 13px;
   cursor: pointer;
-  color: var(--mdr-btn-text);
+  color: var(--mdr-text-secondary);
   line-height: 1.5;
   border-left: 3px solid transparent;
   transition: background 0.1s, color 0.1s;

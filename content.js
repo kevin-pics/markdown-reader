@@ -287,18 +287,12 @@
     return new Promise((resolve) => {
       chrome.runtime.sendMessage({ type: 'fetchUrl', url: dirUrl }, (response) => {
         if (chrome.runtime.lastError || !response || !response.ok) {
-          console.warn('[MDR] Directory listing failed:', chrome.runtime.lastError?.message || response?.error || 'no response');
           resolve([]);
           return;
         }
-        console.log('[MDR] Received HTML length:', response.html.length);
         const parser = new DOMParser();
         const doc = parser.parseFromString(response.html, 'text/html');
-        // Log addRow calls found in the raw HTML for debugging
-        const addRowMatches = response.html.match(/addRow\([^)]+\)/g);
-        console.log('[MDR] addRow calls found:', addRowMatches ? addRowMatches.length : 0, addRowMatches ? addRowMatches.slice(0, 3) : []);
         const files = parseDirListingDoc(doc, dirUrl);
-        console.log('[MDR] Directory listing found', files.length, 'files');
         resolve(files);
       });
     });
