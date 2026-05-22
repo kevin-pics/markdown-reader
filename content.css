@@ -287,6 +287,8 @@ html, body {
   color: var(--mdr-text-muted);
   text-align: center;
   cursor: default;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 #mdr-file-empty::before {
