@@ -73,6 +73,47 @@ html, body {
 }
 
 /* ===== File List ===== */
+#mdr-file-actions {
+  padding: 4px 12px 10px;
+}
+
+#mdr-pick-dir {
+  width: 100%;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+#mdr-pick-dir:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+#mdr-pick-dir:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+#mdr-pick-dir svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
 #mdr-file-list {
   list-style: none;
   margin: 0;
@@ -121,52 +162,11 @@ html, body {
   font-size: 13px;
   color: #9ca3af;
   text-align: center;
+  cursor: default;
 }
 
-.mdr-source-tag {
-  font-size: 10px;
-  color: #9ca3af;
-  background: #f3f4f6;
-  padding: 1px 5px;
-  border-radius: 4px;
-  white-space: nowrap;
-  flex-shrink: 0;
-  margin-left: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-#mdr-scanning-overlay {
-  position: fixed;
-  inset: 0;
-  background: #ffffff;
-  z-index: 99999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.mdr-scanning-hint {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 15px;
-  font-weight: 500;
-  color: #4f46e5;
-}
-
-.mdr-scanning-hint span {
-  width: 16px;
-  height: 16px;
-  border: 2px solid #4f46e5;
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: mdr-spin 1s linear infinite;
-  display: inline-block;
-}
-
-@keyframes mdr-spin {
-  to { transform: rotate(360deg); }
+#mdr-file-empty::before {
+  display: none;
 }
 
 /* ===== TOC ===== */

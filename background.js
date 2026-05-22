@@ -7,16 +7,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
-  if (request.type === 'scanDir') {
-    scanDirectory(request.dirUrl).then(files => {
-      sendResponse({ success: true, files });
-    }).catch(err => {
-      console.error('[MarkdownReader] scanDir error:', err);
-      sendResponse({ success: false, error: err.message });
-    });
-    return true;
-  }
-
   if (request.type === 'getDirFiles') {
     getDirFiles(request.dirUrl).then(sendResponse).catch(err => {
       console.error('[MarkdownReader] getDirFiles error:', err);
@@ -24,74 +14,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true;
   }
-});
 
-async function scanDirectory(dirUrl) {
-  const tab = await chrome.tabs.create({ url: dirUrl, active: false });
-  const tabId = tab.id;
-
-  try {
-    // Wait for tab to finish loading
-    await new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        chrome.tabs.onUpdated.removeListener(listener);
-        reject(new Error('Tab load timeout'));
-      }, 5000);
-
-      const listener = (updatedTabId, info) => {
-        if (updatedTabId === tabId && info.status === 'complete') {
-          clearTimeout(timeout);
-          chrome.tabs.onUpdated.removeListener(listener);
-          resolve();
-        }
-      };
-      chrome.tabs.onUpdated.addListener(listener);
+  if (request.type === 'storeDirFiles') {
+    storeDirFiles(request.dirUrl, request.files).then(sendResponse).catch(err => {
+      console.error('[MarkdownReader] storeDirFiles error:', err);
+      sendResponse({ success: false, error: err.message });
     });
-
-    // Read links from directory page
-    const [result] = await chrome.scripting.executeScript({
-      target: { tabId },
-      func: (baseUrl) => {
-        const files = [];
-        document.querySelectorAll('a[href]').forEach(a => {
-          let href = a.getAttribute('href');
-          if (!href) return;
-          if (href === '../' || href.startsWith('/') || href.endsWith('/')) return;
-          if (href.startsWith('.')) return;
-          const lower = href.toLowerCase();
-          const isMd = lower.endsWith('.md') || lower.endsWith('.markdown') || lower.endsWith('.mdown') || lower.endsWith('.mkd') || lower.endsWith('.mkdn');
-          if (!isMd) return;
-          try {
-            href = new URL(href, baseUrl).href;
-          } catch { return; }
-          files.push({ url: href, title: a.textContent.trim() || href.split('/').pop() });
-        });
-        return files;
-      },
-      args: [dirUrl]
-    });
-
-    const files = (result && result.result) || [];
-
-    // Close background tab
-    await chrome.tabs.remove(tabId);
-
-    // Deduplicate
-    const seen = new Set();
-    const unique = [];
-    files.forEach(f => {
-      if (!seen.has(f.url)) {
-        seen.add(f.url);
-        unique.push(f);
-      }
-    });
-
-    return unique;
-  } catch (err) {
-    try { await chrome.tabs.remove(tabId); } catch {}
-    throw err;
+    return true;
   }
-}
+});
 
 async function recordFile(url, title) {
   const dirUrl = getDirUrl(url);
@@ -122,9 +53,21 @@ async function getDirFiles(dirUrl) {
   return { files: dirFiles[dirUrl] || [] };
 }
 
+async function storeDirFiles(dirUrl, files) {
+  const data = await chrome.storage.local.get('dirFiles');
+  const dirFiles = data.dirFiles || {};
+  dirFiles[dirUrl] = dedupeFiles(files || [])
+    .map(f => ({ url: f.url, title: f.title || getFileName(f.url), path: f.url }))
+    .sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' }));
+  await chrome.storage.local.set({ dirFiles });
+  return { success: true };
+}
+
 function getDirUrl(url) {
   try {
     const u = new URL(url);
+    u.hash = '';
+    u.search = '';
     const lastSlash = u.pathname.lastIndexOf('/');
     if (lastSlash <= 0) return url;
     u.pathname = u.pathname.slice(0, lastSlash + 1);
@@ -144,4 +87,15 @@ function getFileName(url) {
     const parts = url.split('/');
     return decodeURIComponent(parts[parts.length - 1]);
   }
+}
+
+function dedupeFiles(files) {
+  const seen = new Set();
+  const unique = [];
+  files.forEach(f => {
+    if (!f || !f.url || seen.has(f.url)) return;
+    seen.add(f.url);
+    unique.push(f);
+  });
+  return unique;
 }

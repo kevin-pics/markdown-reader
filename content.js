@@ -16,6 +16,8 @@
   function getDirUrl(url) {
     try {
       const u = new URL(url);
+      u.hash = '';
+      u.search = '';
       const lastSlash = u.pathname.lastIndexOf('/');
       if (lastSlash <= 0) return url;
       u.pathname = u.pathname.slice(0, lastSlash + 1);
@@ -38,8 +40,37 @@
   }
 
   function isMarkdownUrl(url) {
-    const lower = url.toLowerCase();
+    let lower = url.toLowerCase();
+    try {
+      lower = new URL(url).pathname.toLowerCase();
+    } catch {
+      lower = lower.split('#')[0].split('?')[0];
+    }
     return lower.endsWith('.md') || lower.endsWith('.markdown') || lower.endsWith('.mdown') || lower.endsWith('.mkd') || lower.endsWith('.mkdn');
+  }
+
+  function isMarkdownFileName(name) {
+    const lower = name.toLowerCase();
+    return lower.endsWith('.md') || lower.endsWith('.markdown') || lower.endsWith('.mdown') || lower.endsWith('.mkd') || lower.endsWith('.mkdn');
+  }
+
+  function fileUrlFromName(dirUrl, name) {
+    return dirUrl + encodeURIComponent(name).replace(/%2F/g, '/');
+  }
+
+  function getCleanFileUrl(url) {
+    try {
+      const u = new URL(url);
+      u.hash = '';
+      u.search = '';
+      return u.toString();
+    } catch {
+      return url.split('#')[0].split('?')[0];
+    }
+  }
+
+  function isSameFileUrl(a, b) {
+    return getDirUrl(a) === getDirUrl(b) && getFileName(a) === getFileName(b);
   }
 
   function slugify(text) {
@@ -103,8 +134,19 @@
 
     const fileListPanel = document.createElement('div');
     fileListPanel.id = 'mdr-panel-files';
+
+    const fileActions = document.createElement('div');
+    fileActions.id = 'mdr-file-actions';
+    fileActions.innerHTML = `
+      <button id="mdr-pick-dir" title="Choose this folder to list Markdown files">
+        <svg viewBox="0 0 24 24"><path d="M12 10v6m-3-3h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.2a2 2 0 0 1-1.4-.6L9.6 3.6A2 2 0 0 0 8.2 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+        Choose folder
+      </button>
+    `;
+
     const fileList = document.createElement('ul');
     fileList.id = 'mdr-file-list';
+    fileListPanel.appendChild(fileActions);
     fileListPanel.appendChild(fileList);
 
     const tocPanel = document.createElement('div');
@@ -139,7 +181,8 @@
       main,
       content,
       tabFiles: tabs.querySelector('#mdr-tab-files'),
-      tabToc: tabs.querySelector('#mdr-tab-toc')
+      tabToc: tabs.querySelector('#mdr-tab-toc'),
+      pickDirButton: fileActions.querySelector('#mdr-pick-dir')
     };
   }
 
@@ -199,7 +242,7 @@
   function renderFileList(currentUrl, files, fileList) {
     fileList.innerHTML = '';
     if (files.length === 0) {
-      fileList.innerHTML = '<li id="mdr-file-empty">No Markdown files found in this directory.</li>';
+      fileList.innerHTML = '<li id="mdr-file-empty">No Markdown files found yet. Choose the current folder to list its Markdown files.</li>';
       return;
     }
 
@@ -211,7 +254,7 @@
 
     sorted.forEach((f) => {
       const li = document.createElement('li');
-      if (f.url === currentUrl) li.classList.add('active');
+      if (isSameFileUrl(f.url, currentUrl)) li.classList.add('active');
 
       const titleSpan = document.createElement('span');
       titleSpan.textContent = f.title || getFileName(f.url);
@@ -224,7 +267,15 @@
   }
 
   function showFileListLoading(fileList) {
-    fileList.innerHTML = '<li id="mdr-file-empty" style="color:#4f46e5;">Scanning directory…</li>';
+    fileList.innerHTML = '<li id="mdr-file-empty" style="color:#4f46e5;">Reading folder...</li>';
+  }
+
+  function showFileListError(fileList, message) {
+    fileList.innerHTML = '';
+    const li = document.createElement('li');
+    li.id = 'mdr-file-empty';
+    li.textContent = message;
+    fileList.appendChild(li);
   }
 
   function parseContentLinks(contentEl, currentUrl, dirUrl) {
@@ -234,7 +285,7 @@
       let href = a.getAttribute('href');
       if (!href) return;
       try {
-        href = new URL(href, currentUrl).href;
+        href = getCleanFileUrl(new URL(href, currentUrl).href);
       } catch { return; }
       if (isMarkdownUrl(href) && getDirUrl(href) === dirUrl) {
         linked.push({ url: href, title: a.textContent.trim() || getFileName(href) });
@@ -260,6 +311,17 @@
   }
 
   // ===== File List Loader =====
+  function dedupeFiles(files) {
+    const seen = new Set();
+    const unique = [];
+    files.forEach((f) => {
+      if (!f || !f.url || seen.has(f.url)) return;
+      seen.add(f.url);
+      unique.push(f);
+    });
+    return unique;
+  }
+
   async function loadFileList(currentUrl, dirUrl, fileList, contentEl) {
     let allFiles = [];
 
@@ -275,61 +337,78 @@
       if (!allFiles.some(f => f.url === l.url)) allFiles.push(l);
     });
 
-    // Render what we have so far
-    renderFileList(currentUrl, allFiles, fileList);
-
-    // If no cache, request background scan
-    if (!cache) {
-      showFileListLoading(fileList);
-      try {
-        const scanned = await requestScan(dirUrl);
-        await setDirCache(dirUrl, scanned);
-
-        // Merge scanned + linked
-        let merged = [...scanned];
-        linked.forEach(l => {
-          if (!merged.some(f => f.url === l.url)) merged.push(l);
-        });
-        renderFileList(currentUrl, merged, fileList);
-      } catch (e) {
-        console.log('[MDR] Background scan failed:', e);
-        // Layer 3: storage fallback
-        try {
-          const res = await new Promise(r => chrome.runtime.sendMessage({ type: 'getDirFiles', dirUrl }, r));
-          const stored = (res && res.files) || [];
-          if (stored.length) {
-            let merged = stored.map(f => ({ url: f.url, title: f.title }));
-            linked.forEach(l => {
-              if (!merged.some(f => f.url === l.url)) merged.push(l);
-            });
-            renderFileList(currentUrl, merged, fileList);
-          } else {
-            renderFileList(currentUrl, linked, fileList);
-          }
-        } catch {
-          renderFileList(currentUrl, linked, fileList);
-        }
-      }
+    // Layer 3: files opened before
+    try {
+      const res = await new Promise(r => chrome.runtime.sendMessage({ type: 'getDirFiles', dirUrl }, r));
+      const stored = ((res && res.files) || []).map(f => ({ url: f.url, title: f.title }));
+      stored.forEach(f => {
+        if (!allFiles.some(existing => existing.url === f.url)) allFiles.push(f);
+      });
+    } catch {
+      // Storage fallback is best-effort.
     }
+
+    renderFileList(currentUrl, dedupeFiles(allFiles), fileList);
   }
 
-  async function requestScan(dirUrl) {
-    return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage({ type: 'scanDir', dirUrl }, (resp) => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-        } else if (!resp || !resp.success) {
-          reject(new Error(resp && resp.error ? resp.error : 'Scan failed'));
-        } else {
-          resolve(resp.files || []);
-        }
+  async function scanPickedDirectory(currentUrl, dirUrl) {
+    if (!window.showDirectoryPicker) {
+      throw new Error('Folder selection is not supported by this Chrome version.');
+    }
+
+    const handle = await window.showDirectoryPicker({
+      mode: 'read',
+      startIn: 'desktop'
+    });
+    const files = [];
+
+    for await (const [name, entry] of handle.entries()) {
+      if (entry.kind !== 'file' || !isMarkdownFileName(name)) continue;
+      files.push({
+        url: fileUrlFromName(dirUrl, name),
+        title: name
       });
+    }
+
+    const unique = dedupeFiles(files);
+    if (!unique.some(f => isSameFileUrl(f.url, currentUrl))) {
+      throw new Error('The selected folder does not appear to contain this Markdown file.');
+    }
+
+    return unique;
+  }
+
+  function setupDirectoryPicker(button, currentUrl, dirUrl, fileList, contentEl) {
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      showFileListLoading(fileList);
+
+      try {
+        const picked = await scanPickedDirectory(currentUrl, dirUrl);
+        const linked = parseContentLinks(contentEl, currentUrl, dirUrl);
+        const merged = dedupeFiles([...picked, ...linked]);
+        await setDirCache(dirUrl, merged);
+        renderFileList(currentUrl, merged, fileList);
+
+        chrome.runtime.sendMessage({ type: 'storeDirFiles', dirUrl, files: merged }, () => {
+          if (chrome.runtime.lastError) console.error(chrome.runtime.lastError);
+        });
+      } catch (err) {
+        if (err && err.name === 'AbortError') {
+          await loadFileList(currentUrl, dirUrl, fileList, contentEl);
+        } else {
+          console.error('[MDR] Folder selection failed:', err);
+          showFileListError(fileList, err.message || 'Could not read the selected folder.');
+        }
+      } finally {
+        button.disabled = false;
+      }
     });
   }
 
   // ===== Main =====
   async function init() {
-    const url = location.href;
+    const url = getCleanFileUrl(location.href);
     if (!isMarkdownUrl(url)) return;
 
     const text = getMarkdownText();
@@ -353,8 +432,9 @@
 
     // Tabs
     setupTabs(ui.tabFiles, ui.tabToc, ui.fileListPanel, ui.tocPanel);
+    setupDirectoryPicker(ui.pickDirButton, url, dirUrl, ui.fileList, ui.content);
 
-    // File list (async: may scan in background)
+    // File list uses passive sources until the user grants folder access.
     await loadFileList(url, dirUrl, ui.fileList, ui.content);
 
     // Record visit

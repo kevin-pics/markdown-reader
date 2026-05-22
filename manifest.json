@@ -4,10 +4,7 @@
   "version": "1.0",
   "description": "Render local Markdown files with file explorer and TOC sidebar.",
   "permissions": [
-    "storage",
-    "activeTab",
-    "tabs",
-    "scripting"
+    "storage"
   ],
   "host_permissions": [
     "file://*/*"
