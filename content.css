@@ -1,5 +1,6 @@
 /* ===== Theme Variables ===== */
 #mdr-container {
+  position: relative;
   display: flex;
   width: 100vw;
   height: 100vh;
@@ -126,7 +127,71 @@ html, body {
 
 /* ===== Sidebar ===== */
 #mdr-sidebar {
-  display: none;
+  width: 260px;
+  min-width: 260px;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  background: var(--mdr-bg-sidebar);
+  border-right: 1px solid var(--mdr-border);
+  font-family: var(--mdr-font);
+  position: relative;
+  transition: width 0.25s ease, min-width 0.25s ease, max-width 0.25s ease;
+}
+
+#mdr-sidebar.collapsed {
+  width: 0;
+  min-width: 0;
+  max-width: 0;
+  overflow: hidden;
+  border-right: none;
+}
+
+#mdr-sidebar-toggle {
+  position: absolute;
+  left: 260px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 48px;
+  border: 1px solid var(--mdr-border);
+  border-left: none;
+  border-radius: 0 6px 6px 0;
+  background: var(--mdr-bg-sidebar);
+  color: var(--mdr-text-secondary);
+  cursor: pointer;
+  padding: 0;
+  transition: left 0.25s ease, background 0.15s, color 0.15s;
+  box-shadow: 2px 0 6px rgba(0,0,0,0.06);
+}
+
+#mdr-sidebar-toggle:hover {
+  background: var(--mdr-hover);
+  color: var(--mdr-text);
+}
+
+#mdr-sidebar.collapsed ~ #mdr-sidebar-toggle {
+  left: 0;
+}
+
+#mdr-sidebar-toggle svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.25s ease;
+}
+
+/* When sidebar is collapsed, flip the arrow to point right (expand direction) */
+#mdr-sidebar.collapsed ~ #mdr-sidebar-toggle svg {
+  transform: rotate(180deg);
 }
 
 #mdr-tabs {
@@ -148,6 +213,7 @@ html, body {
   background: transparent;
   border-radius: 6px;
   cursor: pointer;
+  font-family: var(--mdr-font);
   font-size: 13px;
   font-weight: 500;
   color: var(--mdr-text-secondary);
@@ -235,6 +301,7 @@ html, body {
 
 #mdr-file-list li {
   padding: 7px 16px;
+  font-family: var(--mdr-font);
   font-size: 13px;
   cursor: pointer;
   color: var(--mdr-btn-text);
@@ -276,6 +343,7 @@ html, body {
 
 #mdr-file-list li#mdr-file-empty {
   padding: 20px 16px;
+  font-family: var(--mdr-font);
   font-size: 13px;
   color: var(--mdr-text-muted);
   text-align: center;
@@ -298,6 +366,7 @@ html, body {
 
 #mdr-toc li {
   padding: 5px 16px;
+  font-family: var(--mdr-font);
   font-size: 13px;
   cursor: pointer;
   color: var(--mdr-btn-text);
@@ -535,6 +604,13 @@ html, body {
   #mdr-sidebar {
     width: 240px;
     min-width: 240px;
+    max-width: 240px;
+  }
+  #mdr-sidebar-toggle {
+    left: 240px;
+  }
+  #mdr-sidebar.collapsed ~ #mdr-sidebar-toggle {
+    left: 0;
   }
   #mdr-toolbar {
     padding-left: 24px;

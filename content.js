@@ -141,7 +141,14 @@
     content.id = 'mdr-content';
     main.appendChild(content);
 
+    // Sidebar toggle button
+    const toggleBtn = document.createElement('button');
+    toggleBtn.id = 'mdr-sidebar-toggle';
+    toggleBtn.title = 'Toggle sidebar';
+    toggleBtn.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>';
+
     container.appendChild(sidebar);
+    container.appendChild(toggleBtn);
     container.appendChild(main);
 
     return {
@@ -156,7 +163,8 @@
       content,
       tabFiles: tabs.querySelector('#mdr-tab-files'),
       tabToc: tabs.querySelector('#mdr-tab-toc'),
-      pickDirButton: fileActions.querySelector('#mdr-pick-dir')
+      pickDirButton: fileActions.querySelector('#mdr-pick-dir'),
+      toggleBtn
     };
   }
 
@@ -404,6 +412,11 @@
 
     // File list uses passive sources until the user grants folder access.
     await loadFileList(url, dirUrl, ui.fileList, ui.content);
+
+    // Toggle sidebar
+    ui.toggleBtn.addEventListener('click', () => {
+      ui.sidebar.classList.toggle('collapsed');
+    });
 
     // Scroll spy
     setupScrollSpy(ui.main, headings, tocItems);
