@@ -252,47 +252,6 @@ html, body {
 }
 
 /* ===== File List ===== */
-#mdr-file-actions {
-  padding: 4px 12px 10px;
-}
-
-#mdr-pick-dir {
-  width: 100%;
-  min-height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  border: 1px solid var(--mdr-btn-border);
-  background: var(--mdr-btn-bg);
-  color: var(--mdr-btn-text);
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-#mdr-pick-dir:hover {
-  background: var(--mdr-hover);
-  border-color: var(--mdr-text-secondary);
-}
-
-#mdr-pick-dir:disabled {
-  cursor: wait;
-  opacity: 0.65;
-}
-
-#mdr-pick-dir svg {
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  flex-shrink: 0;
-}
-
 #mdr-file-list {
   list-style: none;
   margin: 0;

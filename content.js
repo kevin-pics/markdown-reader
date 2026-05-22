@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  let inlineCurrentUrl = null;
+  let inlineCurrentUrl = null; // kept for future inline navigation
 
   const hideStyle = document.createElement('style');
   hideStyle.textContent = 'html,body{display:none!important}';
@@ -54,9 +54,7 @@
     return lower.endsWith('.md') || lower.endsWith('.markdown') || lower.endsWith('.mdown') || lower.endsWith('.mkd') || lower.endsWith('.mkdn');
   }
 
-  function fileUrlFromName(dirUrl, name) {
-    return dirUrl + encodeURIComponent(name).replace(/%2F/g, '/');
-  }
+
 
   function getCleanFileUrl(url) {
     try {
@@ -109,18 +107,8 @@
     const fileListPanel = document.createElement('div');
     fileListPanel.id = 'mdr-panel-files';
 
-    const fileActions = document.createElement('div');
-    fileActions.id = 'mdr-file-actions';
-    fileActions.innerHTML = `
-      <button id="mdr-pick-dir" title="Choose this folder to list Markdown files">
-        <svg viewBox="0 0 24 24"><path d="M12 10v6m-3-3h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.2a2 2 0 0 1-1.4-.6L9.6 3.6A2 2 0 0 0 8.2 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
-        Choose folder
-      </button>
-    `;
-
     const fileList = document.createElement('ul');
     fileList.id = 'mdr-file-list';
-    fileListPanel.appendChild(fileActions);
     fileListPanel.appendChild(fileList);
 
     const tocPanel = document.createElement('div');
@@ -163,7 +151,6 @@
       content,
       tabFiles: tabs.querySelector('#mdr-tab-files'),
       tabToc: tabs.querySelector('#mdr-tab-toc'),
-      pickDirButton: fileActions.querySelector('#mdr-pick-dir'),
       toggleBtn
     };
   }
@@ -224,7 +211,7 @@
   function renderFileList(currentUrl, files, fileList, contentEl) {
     fileList.innerHTML = '';
     if (files.length === 0) {
-      fileList.innerHTML = '<li id="mdr-file-empty">No Markdown files found yet. Choose the current folder to list its Markdown files.</li>';
+      fileList.innerHTML = '<li id="mdr-file-empty">No Markdown files found in this directory.</li>';
       return;
     }
 
@@ -245,44 +232,11 @@
       titleSpan.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;';
       li.appendChild(titleSpan);
 
-      li.addEventListener('click', async () => {
-        if (f.handle && contentEl) {
-          try {
-            const file = await f.handle.getFile();
-            const text = await file.text();
-            const headings = renderMarkdown(contentEl, text);
-            document.title = f.title;
-            inlineCurrentUrl = f.url;
-            fileList.querySelectorAll('li').forEach(el => el.classList.remove('active'));
-            li.classList.add('active');
-            const tocList = document.getElementById('mdr-toc');
-            const main = document.getElementById('mdr-main');
-            if (tocList && main) {
-              const tocItems = renderToc(tocList, headings);
-              setupScrollSpy(main, headings, tocItems);
-            }
-          } catch (e) {
-            console.error('Failed to read file inline:', e);
-            window.location.href = f.url;
-          }
-        } else {
-          window.location.href = f.url;
-        }
+      li.addEventListener('click', () => {
+        window.location.href = f.url;
       });
       fileList.appendChild(li);
     });
-  }
-
-  function showFileListLoading(fileList) {
-    fileList.innerHTML = '<li id="mdr-file-empty" style="color:#4f46e5;">Reading folder...</li>';
-  }
-
-  function showFileListError(fileList, message) {
-    fileList.innerHTML = '';
-    const li = document.createElement('li');
-    li.id = 'mdr-file-empty';
-    li.textContent = message;
-    fileList.appendChild(li);
   }
 
   function parseContentLinks(contentEl, currentUrl, dirUrl) {
@@ -389,55 +343,6 @@
     renderFileList(currentUrl, allFiles, fileList, contentEl);
   }
 
-  async function scanPickedDirectory(currentUrl, dirUrl) {
-    if (!window.showDirectoryPicker) {
-      throw new Error('Folder selection is not supported by this Chrome version.');
-    }
-
-    const handle = await window.showDirectoryPicker({
-      startIn: 'desktop'
-    });
-    const files = [];
-
-    for await (const [name, entry] of handle.entries()) {
-      if (entry.kind !== 'file' || !isMarkdownFileName(name)) continue;
-      files.push({
-        url: fileUrlFromName(dirUrl, name),
-        title: name,
-        handle: entry
-      });
-    }
-
-    const unique = dedupeFiles(files);
-    return unique;
-  }
-
-  function setupDirectoryPicker(button, currentUrl, dirUrl, fileList, contentEl) {
-    button.addEventListener('click', async () => {
-      button.disabled = true;
-      showFileListLoading(fileList);
-
-      try {
-        const picked = await scanPickedDirectory(currentUrl, dirUrl);
-        inlineCurrentUrl = null;
-        renderFileList(currentUrl, picked, fileList, contentEl);
-
-        // Auto-select the first file
-        const firstLi = fileList.querySelector('li:not(#mdr-file-empty)');
-        if (firstLi) firstLi.click();
-      } catch (err) {
-        if (err && err.name === 'AbortError') {
-          await loadFileList(currentUrl, dirUrl, fileList, contentEl);
-        } else {
-          console.error('[MDR] Folder selection failed:', err);
-          showFileListError(fileList, err.message || 'Could not read the selected folder.');
-        }
-      } finally {
-        button.disabled = false;
-      }
-    });
-  }
-
 
 
 
@@ -467,7 +372,6 @@
 
     // Tabs
     setupTabs(ui.tabFiles, ui.tabToc, ui.fileListPanel, ui.tocPanel);
-    setupDirectoryPicker(ui.pickDirButton, url, dirUrl, ui.fileList, ui.content);
 
     // File list uses passive sources until the user grants folder access.
     await loadFileList(url, dirUrl, ui.fileList, ui.content);
