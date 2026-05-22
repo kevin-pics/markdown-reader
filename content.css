@@ -270,6 +270,13 @@ html, body {
   flex-shrink: 0;
 }
 
+#mdr-file-list li.active {
+  background: var(--mdr-active-bg);
+  color: var(--mdr-accent-text);
+  border-left-color: var(--mdr-accent);
+  font-weight: 500;
+}
+
 #mdr-file-list li.active::before {
   background: var(--mdr-file-icon-active);
 }
