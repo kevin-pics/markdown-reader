@@ -245,9 +245,6 @@
     const favorites = await getFavorites();
 
     const sorted = [...files].sort((a, b) => {
-      const favA = favorites.has(a.url) ? 1 : 0;
-      const favB = favorites.has(b.url) ? 1 : 0;
-      if (favA !== favB) return favB - favA;
       const mtimeA = a.dateModified ?? Infinity;
       const mtimeB = b.dateModified ?? Infinity;
       if (mtimeA !== mtimeB) return mtimeA - mtimeB;
