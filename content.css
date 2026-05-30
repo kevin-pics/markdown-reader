@@ -272,32 +272,11 @@ html, body {
   word-break: break-all;
 }
 
-#mdr-file-list li::before {
-  content: "";
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  background: var(--mdr-file-icon);
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3C/svg%3E");
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  -webkit-mask-size: contain;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3C/svg%3E");
-  mask-repeat: no-repeat;
-  mask-position: center;
-  mask-size: contain;
-  flex-shrink: 0;
-}
-
 #mdr-file-list li.active {
   background: var(--mdr-active-bg);
   color: var(--mdr-accent-text);
   border-left-color: var(--mdr-accent);
   font-weight: 500;
-}
-
-#mdr-file-list li.active::before {
-  background: var(--mdr-file-icon-active);
 }
 
 #mdr-file-list li#mdr-file-empty {
@@ -310,10 +289,6 @@ html, body {
   word-break: normal;
   overflow-wrap: break-word;
   display: block;
-}
-
-#mdr-file-list li#mdr-file-empty::before {
-  display: none;
 }
 
 /* ===== TOC ===== */
