@@ -80,6 +80,19 @@
   }
 
   // ===== Storage Helpers =====
+  function getFavoriteKey(url) {
+    try {
+      const u = new URL(url);
+      const parts = u.pathname.split('/').filter(Boolean);
+      if (parts.length >= 2) return parts.slice(-2).join('/');
+      return u.pathname;
+    } catch {
+      const parts = url.split('/').filter(Boolean);
+      if (parts.length >= 2) return parts.slice(-2).join('/');
+      return url;
+    }
+  }
+
   function getFavorites() {
     return new Promise((resolve) => {
       chrome.storage.local.get(['mdrFavorites'], (result) => {
@@ -94,11 +107,12 @@
   }
 
   async function toggleFavorite(url) {
+    const key = getFavoriteKey(url);
     const favorites = await getFavorites();
-    if (favorites.has(url)) {
-      favorites.delete(url);
+    if (favorites.has(key)) {
+      favorites.delete(key);
     } else {
-      favorites.add(url);
+      favorites.add(key);
     }
     return new Promise((resolve) => {
       chrome.storage.local.set({ mdrFavorites: Array.from(favorites) }, () => {
@@ -265,14 +279,16 @@
       li.appendChild(titleSpan);
 
       const starBtn = document.createElement('button');
-      starBtn.className = 'mdr-star' + (favorites.has(f.url) ? ' mdr-starred' : '');
-      starBtn.title = favorites.has(f.url) ? 'Unfavorite' : 'Favorite';
+      const favKey = getFavoriteKey(f.url);
+      starBtn.className = 'mdr-star' + (favorites.has(favKey) ? ' mdr-starred' : '');
+      starBtn.title = favorites.has(favKey) ? 'Unfavorite' : 'Favorite';
       starBtn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
       starBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const updated = await toggleFavorite(f.url);
-        starBtn.className = 'mdr-star' + (updated.has(f.url) ? ' mdr-starred' : '');
-        starBtn.title = updated.has(f.url) ? 'Unfavorite' : 'Favorite';
+        const newKey = getFavoriteKey(f.url);
+        starBtn.className = 'mdr-star' + (updated.has(newKey) ? ' mdr-starred' : '');
+        starBtn.title = updated.has(newKey) ? 'Unfavorite' : 'Favorite';
         // Re-render to resort
         renderFileList(currentUrl, files, fileList, contentEl);
       });
