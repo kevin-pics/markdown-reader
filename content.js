@@ -216,8 +216,11 @@
     }
 
     const sorted = [...files].sort((a, b) => {
-      const nameA = getFileName(a.url);
-      const nameB = getFileName(b.url);
+      const mtimeA = a.dateModified ?? Infinity;
+      const mtimeB = b.dateModified ?? Infinity;
+      if (mtimeA !== mtimeB) return mtimeA - mtimeB;
+      const nameA = a.title || getFileName(a.url);
+      const nameB = b.title || getFileName(b.url);
       return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
     });
 
@@ -283,46 +286,73 @@
     return unique;
   }
 
-  function fetchDirListing(dirUrl) {
+  function fetchDirListingDoc(dirUrl) {
     return new Promise((resolve) => {
       chrome.runtime.sendMessage({ type: 'fetchUrl', url: dirUrl }, (response) => {
         if (chrome.runtime.lastError || !response || !response.ok) {
-          resolve([]);
+          resolve(null);
           return;
         }
         const parser = new DOMParser();
-        const doc = parser.parseFromString(response.html, 'text/html');
-        const files = parseDirListingDoc(doc, dirUrl);
-        resolve(files);
+        resolve(parser.parseFromString(response.html, 'text/html'));
       });
     });
   }
 
-  function parseDirListingDoc(doc, dirUrl) {
+  async function fetchDirListing(dirUrl) {
+    const doc = await fetchDirListingDoc(dirUrl);
+    return doc ? parseDirListingDoc(doc, dirUrl) : [];
+  }
+
+  function parseDirListingRows(doc, dirUrl) {
     // Chrome directory listings use JS addRow() to build the page dynamically.
     // DOMParser won't execute JS, so we must parse the script source instead.
+    // Current Chromium signature:
+    // addRow(name, url, isdir, size, size_string, date_modified, date_modified_string)
     const scripts = doc.querySelectorAll('script');
-    const files = [];
+    const rows = [];
     scripts.forEach(script => {
-      const regex = /addRow\(\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*(\d+)\s*,/g;
+      const regex = /addRow\(\s*"((?:[^"\\]|\\.)*)"\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*(\d+)\s*,\s*(-?\d+)\s*,\s*"((?:[^"\\]|\\.)*)"\s*,\s*(-?\d+)\s*,\s*"((?:[^"\\]|\\.)*)"\s*\)/g;
       let match;
       while ((match = regex.exec(script.textContent)) !== null) {
         const name = match[1].replace(/\\(.)/g, '$1');
         const urlPath = match[2].replace(/\\(.)/g, '$1');
-        const isdir = parseInt(match[3], 10);
-        if (isdir !== 0) return; // skip directories
-        if (!isMarkdownFileName(name)) return;
+        let fileUrl;
         try {
-          const fileUrl = new URL(urlPath, dirUrl).href;
-          // Only include files in the same directory
-          const fileDir = getDirUrl(fileUrl);
-          if (fileDir !== dirUrl) return;
-          files.push({ url: fileUrl, title: name });
+          fileUrl = new URL(urlPath, dirUrl).href;
         } catch {
-          // Fallback: construct URL directly
-          files.push({ url: dirUrl + encodeURIComponent(name), title: name });
+          fileUrl = dirUrl + encodeURIComponent(name);
         }
+        rows.push({
+          name,
+          urlPath,
+          url: fileUrl,
+          isdir: parseInt(match[3], 10),
+          size: parseInt(match[4], 10),
+          sizeString: match[5].replace(/\\(.)/g, '$1'),
+          dateModified: parseInt(match[6], 10),
+          dateModifiedString: match[7].replace(/\\(.)/g, '$1')
+        });
       }
+    });
+    return rows;
+  }
+
+  function parseDirListingDoc(doc, dirUrl) {
+    const files = [];
+    parseDirListingRows(doc, dirUrl).forEach(row => {
+      if (row.isdir !== 0) return; // skip directories
+      if (!isMarkdownFileName(row.name)) return;
+      // Only include files in the same directory
+      if (getDirUrl(row.url) !== dirUrl) return;
+      files.push({
+        url: row.url,
+        title: row.name,
+        size: row.size,
+        sizeString: row.sizeString,
+        dateModified: row.dateModified,
+        dateModifiedString: row.dateModifiedString
+      });
     });
     return dedupeFiles(files);
   }
@@ -336,9 +366,6 @@
     const allFiles = dedupeFiles([...dirFiles, ...linked]);
     renderFileList(currentUrl, allFiles, fileList, contentEl);
   }
-
-
-
 
   // ===== Main =====
   async function init() {
