@@ -80,6 +80,33 @@
   }
 
   // ===== Storage Helpers =====
+  function getFavorites() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['mdrFavorites'], (result) => {
+        if (chrome.runtime.lastError) {
+          resolve(new Set());
+          return;
+        }
+        const list = result.mdrFavorites || [];
+        resolve(new Set(list));
+      });
+    });
+  }
+
+  async function toggleFavorite(url) {
+    const favorites = await getFavorites();
+    if (favorites.has(url)) {
+      favorites.delete(url);
+    } else {
+      favorites.add(url);
+    }
+    return new Promise((resolve) => {
+      chrome.storage.local.set({ mdrFavorites: Array.from(favorites) }, () => {
+        resolve(favorites);
+      });
+    });
+  }
+
   // ===== UI Builders =====
   function buildSkeleton() {
     const container = document.createElement('div');
@@ -208,14 +235,19 @@
     tabToc.addEventListener('click', () => switchTab('toc'));
   }
 
-  function renderFileList(currentUrl, files, fileList, contentEl) {
+  async function renderFileList(currentUrl, files, fileList, contentEl) {
     fileList.innerHTML = '';
     if (files.length === 0) {
       fileList.innerHTML = '<li id="mdr-file-empty">No Markdown files found in this directory.</li>';
       return;
     }
 
+    const favorites = await getFavorites();
+
     const sorted = [...files].sort((a, b) => {
+      const favA = favorites.has(a.url) ? 1 : 0;
+      const favB = favorites.has(b.url) ? 1 : 0;
+      if (favA !== favB) return favB - favA;
       const mtimeA = a.dateModified ?? Infinity;
       const mtimeB = b.dateModified ?? Infinity;
       if (mtimeA !== mtimeB) return mtimeA - mtimeB;
@@ -234,6 +266,20 @@
       titleSpan.textContent = f.title || getFileName(f.url);
       titleSpan.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;';
       li.appendChild(titleSpan);
+
+      const starBtn = document.createElement('button');
+      starBtn.className = 'mdr-star' + (favorites.has(f.url) ? ' mdr-starred' : '');
+      starBtn.title = favorites.has(f.url) ? 'Unfavorite' : 'Favorite';
+      starBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+      starBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const updated = await toggleFavorite(f.url);
+        starBtn.className = 'mdr-star' + (updated.has(f.url) ? ' mdr-starred' : '');
+        starBtn.title = updated.has(f.url) ? 'Unfavorite' : 'Favorite';
+        // Re-render to resort
+        renderFileList(currentUrl, files, fileList, contentEl);
+      });
+      li.appendChild(starBtn);
 
       li.addEventListener('click', () => {
         window.location.href = f.url;
@@ -364,7 +410,7 @@
     const linked = parseContentLinks(contentEl, currentUrl, dirUrl);
     // Merge and dedupe
     const allFiles = dedupeFiles([...dirFiles, ...linked]);
-    renderFileList(currentUrl, allFiles, fileList, contentEl);
+    await renderFileList(currentUrl, allFiles, fileList, contentEl);
   }
 
   // ===== Main =====

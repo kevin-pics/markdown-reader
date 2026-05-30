@@ -279,6 +279,43 @@ html, body {
   font-weight: 500;
 }
 
+#mdr-file-list li .mdr-star {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+#mdr-file-list li:hover .mdr-star,
+#mdr-file-list li .mdr-star.mdr-starred {
+  opacity: 1;
+}
+
+#mdr-file-list li .mdr-star svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  color: var(--mdr-text-muted);
+}
+
+#mdr-file-list li .mdr-star.mdr-starred svg {
+  fill: var(--mdr-accent);
+  stroke: var(--mdr-accent);
+  color: var(--mdr-accent);
+}
+
+#mdr-file-list li .mdr-star:hover svg {
+  transform: scale(1.15);
+}
+
 #mdr-file-list li#mdr-file-empty {
   padding: 20px 16px;
   font-family: var(--mdr-font);
