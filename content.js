@@ -212,6 +212,113 @@
     return headings;
   }
 
+  function getMermaid() {
+    const m = (typeof mermaid !== 'undefined' && mermaid)
+      || (typeof window !== 'undefined' && window.mermaid);
+    if (!m) return null;
+    return (typeof m.initialize === 'function') ? m : (m.default || null);
+  }
+
+  let mermaidReady = false;
+  function ensureMermaid() {
+    const m = getMermaid();
+    if (!m) return null;
+    if (!mermaidReady) {
+      const dark = document.querySelector('#mdr-container.theme-dark, #mdr-container.theme-dark-dimmed')
+        || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      try {
+        m.initialize({ startOnLoad: false, theme: dark ? 'dark' : 'default', securityLevel: 'loose' });
+        mermaidReady = true;
+      } catch {
+        return null;
+      }
+    }
+    return m;
+  }
+
+  let mermaidSeq = 0;
+  function setupMermaidBlock(codeEl) {
+    const pre = codeEl.parentElement;
+    if (!pre || pre.tagName !== 'PRE') return;
+    const source = codeEl.textContent;
+    const idx = mermaidSeq++;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'mdr-mermaid';
+
+    const toggle = document.createElement('button');
+    toggle.className = 'mdr-mermaid-toggle';
+    toggle.type = 'button';
+
+    const preview = document.createElement('div');
+    preview.className = 'mdr-mermaid-preview';
+
+    pre.parentNode.insertBefore(wrapper, pre);
+    wrapper.appendChild(toggle);
+    wrapper.appendChild(preview);
+    wrapper.appendChild(pre);
+    pre.classList.add('mdr-mermaid-code');
+
+    let mode = 'preview';
+    let rendered = false;
+
+    async function renderDiagram() {
+      if (rendered) return;
+      rendered = true;
+      const m = ensureMermaid();
+      if (!m) {
+        const loaded = (typeof mermaid !== 'undefined') || (typeof window !== 'undefined' && !!window.mermaid);
+        console.warn('[markdown-reader] Mermaid global not found. '
+          + (loaded ? 'Library loaded but has no initialize().'
+                    : 'Library was not injected. Reload the extension at chrome://extensions, then refresh.'));
+        preview.innerHTML = '<div class="mdr-mermaid-error">Mermaid is unavailable. '
+          + 'Reload the extension (chrome://extensions) and refresh this page.</div>';
+        return;
+      }
+      try {
+        const { svg } = await m.render('mdr-mermaid-svg-' + idx, source);
+        preview.innerHTML = svg;
+      } catch (e) {
+        rendered = false;
+        preview.innerHTML = '<div class="mdr-mermaid-error">Failed to render diagram: '
+          + (e && e.message ? e.message : 'unknown error') + '</div>';
+      }
+    }
+
+    function applyMode() {
+      if (mode === 'preview') {
+        preview.style.display = '';
+        pre.style.display = 'none';
+        toggle.textContent = 'Code';
+        renderDiagram();
+      } else {
+        preview.style.display = 'none';
+        pre.style.display = '';
+        toggle.textContent = 'Preview';
+      }
+    }
+
+    toggle.addEventListener('click', () => {
+      mode = mode === 'preview' ? 'code' : 'preview';
+      applyMode();
+    });
+
+    applyMode();
+  }
+
+  function setupCodeBlocks(contentEl) {
+    const codeBlocks = contentEl.querySelectorAll('pre > code');
+    codeBlocks.forEach((code) => {
+      const match = (code.className || '').match(/language-([\w-]+)/i);
+      const lang = match ? match[1].toLowerCase() : '';
+      if (lang === 'mermaid') {
+        setupMermaidBlock(code);
+      } else if (window.Prism && Prism.highlightElement) {
+        try { Prism.highlightElement(code); } catch {}
+      }
+    });
+  }
+
   function renderToc(tocList, headings) {
     tocList.innerHTML = '';
     if (headings.length === 0) {
@@ -445,6 +552,7 @@
 
     // Render markdown
     const headings = renderMarkdown(ui.content, text);
+    setupCodeBlocks(ui.content);
     const docTitle = ui.content.querySelector('h1')?.textContent?.trim() || fileName;
 
     // Render TOC

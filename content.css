@@ -553,6 +553,154 @@ html, body {
   margin-right: 6px;
 }
 
+/* ===== Syntax Highlight (Prism, light) ===== */
+#mdr-content pre code .token.comment,
+#mdr-content pre code .token.prolog,
+#mdr-content pre code .token.doctype,
+#mdr-content pre code .token.cdata { color: #708090; }
+#mdr-content pre code .token.punctuation { color: #999; }
+#mdr-content pre code .token.namespace { opacity: 0.7; }
+#mdr-content pre code .token.property,
+#mdr-content pre code .token.tag,
+#mdr-content pre code .token.boolean,
+#mdr-content pre code .token.number,
+#mdr-content pre code .token.constant,
+#mdr-content pre code .token.symbol,
+#mdr-content pre code .token.deleted { color: #905; }
+#mdr-content pre code .token.selector,
+#mdr-content pre code .token.attr-name,
+#mdr-content pre code .token.string,
+#mdr-content pre code .token.char,
+#mdr-content pre code .token.builtin,
+#mdr-content pre code .token.inserted { color: #690; }
+#mdr-content pre code .token.operator,
+#mdr-content pre code .token.entity,
+#mdr-content pre code .token.url { color: #9a6e3a; }
+#mdr-content pre code .token.atrule,
+#mdr-content pre code .token.attr-value,
+#mdr-content pre code .token.keyword { color: #07a; }
+#mdr-content pre code .token.function,
+#mdr-content pre code .token.class-name { color: #dd4a68; }
+#mdr-content pre code .token.regex,
+#mdr-content pre code .token.important,
+#mdr-content pre code .token.variable { color: #e90; }
+#mdr-content pre code .token.important,
+#mdr-content pre code .token.bold { font-weight: 700; }
+#mdr-content pre code .token.italic { font-style: italic; }
+
+/* Dark themes */
+#mdr-container.theme-dark #mdr-content pre code .token.comment,
+#mdr-container.theme-dark #mdr-content pre code .token.prolog,
+#mdr-container.theme-dark #mdr-content pre code .token.doctype,
+#mdr-container.theme-dark #mdr-content pre code .token.cdata,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.comment,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.prolog,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.doctype,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.cdata { color: #8b949e; }
+#mdr-container.theme-dark #mdr-content pre code .token.punctuation,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.punctuation { color: #c9d1d9; }
+#mdr-container.theme-dark #mdr-content pre code .token.property,
+#mdr-container.theme-dark #mdr-content pre code .token.tag,
+#mdr-container.theme-dark #mdr-content pre code .token.boolean,
+#mdr-container.theme-dark #mdr-content pre code .token.number,
+#mdr-container.theme-dark #mdr-content pre code .token.constant,
+#mdr-container.theme-dark #mdr-content pre code .token.symbol,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.property,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.tag,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.boolean,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.number,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.constant,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.symbol { color: #79c0ff; }
+#mdr-container.theme-dark #mdr-content pre code .token.selector,
+#mdr-container.theme-dark #mdr-content pre code .token.attr-name,
+#mdr-container.theme-dark #mdr-content pre code .token.string,
+#mdr-container.theme-dark #mdr-content pre code .token.char,
+#mdr-container.theme-dark #mdr-content pre code .token.builtin,
+#mdr-container.theme-dark #mdr-content pre code .token.inserted,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.selector,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.attr-name,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.string,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.char,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.builtin,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.inserted { color: #a5d6ff; }
+#mdr-container.theme-dark #mdr-content pre code .token.operator,
+#mdr-container.theme-dark #mdr-content pre code .token.entity,
+#mdr-container.theme-dark #mdr-content pre code .token.url,
+#mdr-container.theme-dark #mdr-content pre code .token.keyword,
+#mdr-container.theme-dark #mdr-content pre code .token.atrule,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.operator,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.entity,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.url,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.keyword,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.atrule { color: #ff7b72; }
+#mdr-container.theme-dark #mdr-content pre code .token.function,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.function { color: #d2a8ff; }
+#mdr-container.theme-dark #mdr-content pre code .token.class-name,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.class-name { color: #7ee787; }
+#mdr-container.theme-dark #mdr-content pre code .token.regex,
+#mdr-container.theme-dark #mdr-content pre code .token.important,
+#mdr-container.theme-dark #mdr-content pre code .token.variable,
+#mdr-container.theme-dark #mdr-content pre code .token.attr-value,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.regex,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.important,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.variable,
+#mdr-container.theme-dark-dimmed #mdr-content pre code .token.attr-value { color: #ffa657; }
+
+/* ===== Mermaid ===== */
+#mdr-content .mdr-mermaid {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+#mdr-content .mdr-mermaid pre.mdr-mermaid-code {
+  margin-bottom: 0;
+}
+
+#mdr-content .mdr-mermaid-toggle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  padding: 3px 10px;
+  font-family: var(--mdr-font);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mdr-btn-text);
+  background: var(--mdr-btn-bg);
+  border: 1px solid var(--mdr-btn-border);
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0.85;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+
+#mdr-content .mdr-mermaid-toggle:hover {
+  opacity: 1;
+  background: var(--mdr-hover);
+  color: var(--mdr-text);
+}
+
+#mdr-content .mdr-mermaid-preview {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  background: var(--mdr-pre-bg);
+  border: 1px solid var(--mdr-border);
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+#mdr-content .mdr-mermaid-preview svg {
+  max-width: 100%;
+  height: auto;
+}
+
+#mdr-content .mdr-mermaid-error {
+  color: var(--mdr-code-color);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.875em;
+}
+
 /* ===== Scrollbar ===== */
 #mdr-main::-webkit-scrollbar,
 #mdr-sidebar-content::-webkit-scrollbar {

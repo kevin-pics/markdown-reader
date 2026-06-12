@@ -24,6 +24,8 @@
       "run_at": "document_start",
       "js": [
         "marked.min.js",
+        "lib/prism-bundle.min.js",
+        "lib/mermaid.min.js",
         "content.js"
       ],
       "css": [
