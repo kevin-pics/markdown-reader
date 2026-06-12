@@ -656,11 +656,23 @@ html, body {
   margin-bottom: 0;
 }
 
-#mdr-content .mdr-mermaid-toggle {
+#mdr-content .mdr-mermaid-bar {
   position: absolute;
   top: 8px;
   right: 8px;
   z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.85;
+  transition: opacity 0.15s;
+}
+
+#mdr-content .mdr-mermaid:hover .mdr-mermaid-bar {
+  opacity: 1;
+}
+
+#mdr-content .mdr-mermaid-toggle {
   padding: 3px 10px;
   font-family: var(--mdr-font);
   font-size: 12px;
@@ -670,12 +682,10 @@ html, body {
   border: 1px solid var(--mdr-btn-border);
   border-radius: 6px;
   cursor: pointer;
-  opacity: 0.85;
-  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
 #mdr-content .mdr-mermaid-toggle:hover {
-  opacity: 1;
   background: var(--mdr-hover);
   color: var(--mdr-text);
 }

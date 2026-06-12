@@ -219,15 +219,16 @@
     return (typeof m.initialize === 'function') ? m : (m.default || null);
   }
 
+  const MERMAID_THEME = 'neutral';
+  let mermaidRenderSeq = 0;
   let mermaidReady = false;
+
   function ensureMermaid() {
     const m = getMermaid();
     if (!m) return null;
     if (!mermaidReady) {
-      const dark = document.querySelector('#mdr-container.theme-dark, #mdr-container.theme-dark-dimmed')
-        || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
       try {
-        m.initialize({ startOnLoad: false, theme: dark ? 'dark' : 'default', securityLevel: 'loose' });
+        m.initialize({ startOnLoad: false, securityLevel: 'loose', theme: MERMAID_THEME });
         mermaidReady = true;
       } catch {
         return null;
@@ -236,15 +237,16 @@
     return m;
   }
 
-  let mermaidSeq = 0;
   function setupMermaidBlock(codeEl) {
     const pre = codeEl.parentElement;
     if (!pre || pre.tagName !== 'PRE') return;
     const source = codeEl.textContent;
-    const idx = mermaidSeq++;
 
     const wrapper = document.createElement('div');
     wrapper.className = 'mdr-mermaid';
+
+    const bar = document.createElement('div');
+    bar.className = 'mdr-mermaid-bar';
 
     const toggle = document.createElement('button');
     toggle.className = 'mdr-mermaid-toggle';
@@ -253,8 +255,10 @@
     const preview = document.createElement('div');
     preview.className = 'mdr-mermaid-preview';
 
+    bar.appendChild(toggle);
+
     pre.parentNode.insertBefore(wrapper, pre);
-    wrapper.appendChild(toggle);
+    wrapper.appendChild(bar);
     wrapper.appendChild(preview);
     wrapper.appendChild(pre);
     pre.classList.add('mdr-mermaid-code');
@@ -267,6 +271,7 @@
       rendered = true;
       const m = ensureMermaid();
       if (!m) {
+        rendered = false;
         const loaded = (typeof mermaid !== 'undefined') || (typeof window !== 'undefined' && !!window.mermaid);
         console.warn('[markdown-reader] Mermaid global not found. '
           + (loaded ? 'Library loaded but has no initialize().'
@@ -276,7 +281,7 @@
         return;
       }
       try {
-        const { svg } = await m.render('mdr-mermaid-svg-' + idx, source);
+        const { svg } = await m.render('mdr-mermaid-svg-' + (mermaidRenderSeq++), source);
         preview.innerHTML = svg;
       } catch (e) {
         rendered = false;
