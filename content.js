@@ -197,11 +197,18 @@
   }
 
   function renderMarkdown(contentEl, text) {
+    const renderer = new marked.Renderer();
+    const defaultLink = renderer.link.bind(renderer);
+    renderer.link = (token) => {
+      const html = defaultLink(token);
+      return html.replace(/^<a /, '<a target="_blank" rel="noopener noreferrer" ');
+    };
     const html = marked.parse(text, {
       gfm: true,
       breaks: true,
       headerIds: true,
-      mangle: false
+      mangle: false,
+      renderer
     });
     contentEl.innerHTML = html;
 
